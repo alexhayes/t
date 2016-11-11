@@ -1,3 +1,5 @@
+_So I think this works. It works for me. But it's not really ready for primetime yet. Released some others can look / play._
+
 ## Installation
 
 Install with pip:
