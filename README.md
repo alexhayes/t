@@ -29,7 +29,7 @@ Comes with three commands, `start`, `continue` and `stop`. Continue and stop are
 Start let's you specify some options.
 
 ```
-Usage: cli.py start [OPTIONS] [MESSAGE]
+Usage: t start [OPTIONS] [MESSAGE]
 
 Options:
   --git   Use the current git repo and branch name as the message
