@@ -49,7 +49,7 @@ setuptools.setup(
     description='CLI for Toggl',
     entry_points={
         'console_scripts': [
-            't = t.cli:cli',
+            't = cli:cli',
         ]
     },
     install_requires=gather_requirements(),
