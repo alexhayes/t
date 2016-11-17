@@ -9,6 +9,9 @@ import os
 
 import requests
 
+from t.api.consts import ACTION_START, ACTION_CONTINUE
+from t.api.errors import UnrecoverableError
+from t.api.plugins import attach_toggl_request_hook
 from .settings import get_settings
 
 
@@ -16,33 +19,34 @@ def toggl_key():
     return os.environ.get('TOGGL_KEY', get_settings()['toggl_key'])
 
 
-def toggl(method, action, data={}):
-    url = 'https://www.toggl.com/api/v8/' + action
+def toggl(method, endpoint, data={}):
+    url = 'https://www.toggl.com/api/v8/' + endpoint
     f = getattr(requests, method.lower())
     response = f(url, json=data, auth=(toggl_key(), 'api_token'), headers={'content-type': 'application/json'})
 
-    if response.status_code <= 400:
+    if response.status_code < 400:
         return response
     else:
-        raise Exception("{} {}".format(
+        raise UnrecoverableError("Error requesting Toggl API: {} {} - {}".format(
             response.status_code,
             response.reason,
+            response.text
         ))
 
 
-def timer_start(message, project_id=None) -> bool:
+def timer_start(message) -> str:
     data = {
         'time_entry': {
             'description': message,
             'created_with': 't <https://github.com/sesh/t>',
         }
     }
-    if project_id:
-        data['time_entry']['pid'] = project_id
+
+    data = attach_toggl_request_hook(ACTION_START, data)
 
     toggl('post', 'time_entries/start', data)
 
-    return True
+    return data['time_entry']['description']
 
 
 def timer_stop() -> bool:
@@ -54,7 +58,7 @@ def timer_stop() -> bool:
     response = toggl('get', 'time_entries/current').json()
     if 'data' in response and response['data']:
         toggl_id = response['data']['id']
-        response = toggl('put', 'time_entries/{}/stop'.format(toggl_id))
+        toggl('put', 'time_entries/{}/stop'.format(toggl_id))
         return True
     else:
         return False
@@ -72,8 +76,10 @@ def timer_continue() -> str:
             'created_with': 't <https://github.com/sesh/t>',
         }
     }
+    data = attach_toggl_request_hook(ACTION_CONTINUE, data)
     toggl('post', 'time_entries/start', data)
-    return message
+
+    return data['time_entry']['description']
 
 
 def fetch_toggl_workspaces():

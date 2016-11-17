@@ -1,5 +1,7 @@
 _So I think this works. It works for me. But it's not really ready for primetime yet. Released some others can look / play._
 
+We're using this for helping us track our time at [Common Code](http://commoncode.io).
+
 ## Installation
 
 Install with pip:
@@ -37,7 +39,13 @@ Options:
   --help  Show this message and exit.
 ```
 
-## Jira Integration
+
+## Plugins
+
+t comes with a basic plugin system that allows a plugin writer to hook into the
+basic usage of t.
+
+### Jira Plugin
 
 You can automatically set the message to a Jira ticket number followed by the 
 summary of the Jira ticket, for example;
@@ -62,17 +70,25 @@ Your `t.yaml` file should be in the following structure;
 
 ```yaml
 toggl_key: <your-api-key>
-jira:
-  host: example.atlassian.net
-  user: john
-  password: s3cr3t
-  projects:
-    12345: 54321
-    56789: 98765
+plugins:
+    t.plugins.jira:
+      - name: "Example 1"
+        host: example1.atlassian.net
+        user: john
+        password: s3cr3t
+        projects:
+          DF: 54321
+          CD: 98765
+    
+      - name: "Example 2"
+        host: example2.atlassian.net
+        user: john
+        password: sm1th
+        projects:
+          YZ: 4321
 ```
 
-The setting `jira -> projects` is a mapping of Jira project ids to Toggl project 
-ids.
+`projects` is a mapping of Jira project identifiers to Toggl project ids.
 
 To ease the burden of creating these mappings there are several sub-commands 
 available;
@@ -82,4 +98,39 @@ available;
 - `t toggl project list 123` - list all available Toggl projects for a workspace
 - `t jira project map 12345 54321` - map Jira project `12345` to Toggl project `54321`
 
+You can also define a custom message rather than using the summary from Jira,
+like so;
 
+```bash
+t start df-123 "Custom description for time entry"
+```
+
+### Writing a plugin
+
+Creating a plugin is easy, you just need to point to a module in your settings
+file that contains either a `cli_hook` or `toggl_request_hook` function.
+
+#### `cli_hook(cli, settings)`
+
+If defined, your `cli_hook` function should accept a `cli` and `settings` attributes.
+
+- `cli`: Is the [click](http://click.pocoo.org/5/) root group upon which you can
+  attach groups/commands to. This allows you to add your own custom commands.
+- `settings`: Is a dict of settings as defined in the settings file for this
+  plugin.
+  
+#### `toggl_request_hook(action, data, settings)`
+
+If defined, your `toggl_request_hook` function can hook into the data that is
+sent to the Toggl API.
+
+- `action`: Is either `t.consts.ACTION_START` or `t.consts.ACTION_CONTINUE`
+- `data`: Is the data attribute that will be supplied to requests.
+- `settings`: Is a dict of settings as defined in the settings file for this
+  plugin. 
+
+
+## Authors
+
+- [Brenton Cleeland](https://github.com/sesh)
+- [Alex Hayes](https://github.com/alexhayes)
